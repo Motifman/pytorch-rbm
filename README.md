@@ -23,6 +23,7 @@ tensorboard --logdir log/
 ```
 
 figディレクトリに以下のような結果が格納されます。上段は入力画像、中段は再構成画像、下段は差分画像になっています。
+![reconst](https://github.com/Motifman/pytorch-rbm/blob/main/fig/reconst_img.pdf)
 
 また、平均自由エネルギーのプロットも保存されます。trainとtestの平均自由エネルギーの差をモニターすることで過学習の監視が可能です。
 平均自由エネルギーは以下の式の計算結果をミニバッチで平均した値です
