@@ -23,13 +23,12 @@ tensorboard --logdir log/
 ```
 
 figディレクトリに以下のような結果が格納されます。上段は入力画像、中段は再構成画像、下段は差分画像になっています。
-![Result](fig/reconst_img.pdf, Result)
 
 また、平均自由エネルギーのプロットも保存されます。trainとtestの平均自由エネルギーの差をモニターすることで過学習の監視が可能です。
 平均自由エネルギーは以下の式の計算結果をミニバッチで平均した値です
 ```math
-b(x) = (b^{\mathrm{H}})^{\mathrm{T}} + x^{\mathrm{T}}W
-F_{\theta}(x) = -(b^{\mathrm{V}})^{\mathrm{T}}x - \sum^M_{i=1} \log(1 + \exp(b_i(x)))
+b(x) &= (b^{\mathrm{H}})^{\mathrm{T}} + x^{\mathrm{T}}W\\
+F_{\theta}(x) &= -(b^{\mathrm{V}})^{\mathrm{T}}x - \sum^M_{i=1} \log(1 + \exp(b_i(x)))
 ```
 
 ## TODO

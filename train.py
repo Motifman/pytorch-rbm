@@ -171,7 +171,7 @@ if __name__ == "__main__":
     grid = make_grid(images, nrow=10)
     fig_dir = f"./{args.fig_dir}"
     os.makedirs(fig_dir, exist_ok=True)
-    path = f"{fig_dir}/recost_img.pdf"
+    path = f"{fig_dir}/reconst_img.pdf"
     imshow(grid, path)
 
     plt.figure()
