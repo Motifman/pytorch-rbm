@@ -40,6 +40,7 @@ if __name__ == "__main__":
     parser.add_argument("--log_interval", type=int, default=1000)
     parser.add_argument("--device_id", type=str, default="cuda:0")
     parser.add_argument("--num_gib", type=int, default=1000)
+    parser.add_argument("--result_format", type=str, default="pdf")
     args = parser.parse_args()
 
     # tensorboard
@@ -169,9 +170,10 @@ if __name__ == "__main__":
 
     images = torch.cat([inputs[:10], outputs[:10], diff[:10]], dim=0)
     grid = make_grid(images, nrow=10)
+    format = args.result_format
     fig_dir = f"./{args.fig_dir}"
     os.makedirs(fig_dir, exist_ok=True)
-    path = f"{fig_dir}/reconst_img.pdf"
+    path = f"{fig_dir}/reconst_img.{format}"
     imshow(grid, path)
 
     plt.figure()
@@ -179,19 +181,19 @@ if __name__ == "__main__":
     plt.plot(metrics["step"], metrics["reconst_test"], label="test", marker=".")
     plt.xlabel("step")
     plt.ylabel("reconst_loss")
-    plt.savefig(f"{fig_dir}/result_reconst.pdf")
+    plt.savefig(f"{fig_dir}/result_reconst.{format}")
 
     plt.figure()
     plt.plot(metrics["step"], metrics["fe_train"], label="train", marker=".")
     plt.plot(metrics["step"], metrics["fe_test"], label="test", marker=".")
     plt.xlabel("step")
     plt.ylabel("free_energy")
-    plt.savefig(f"{fig_dir}/result_fe.pdf")
+    plt.savefig(f"{fig_dir}/result_fe.{format}")
 
     plt.figure()
     plt.plot(metrics["step"], metrics["fe_diff"], marker=".")
     plt.xlabel("step")
     plt.ylabel("free_energy_diff")
-    plt.savefig(f"{fig_dir}/result_fe_diff.pdf")
+    plt.savefig(f"{fig_dir}/result_fe_diff.{format}")
 
     writer.close()
