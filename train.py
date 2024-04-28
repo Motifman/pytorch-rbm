@@ -5,7 +5,7 @@ from torchvision.datasets import MNIST
 from torchvision.transforms import transforms
 from torch.utils.data import DataLoader
 from rbm import RBM
-from optim import Adam
+from optim import Adam, SGD
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from tensorboardX import SummaryWriter
@@ -72,7 +72,12 @@ if __name__ == "__main__":
         device=device,
     ).to(device)
     model.requires_grad_(False)  # no-use pytorch BP
-    optimizer = Adam(model.state_dict(), lr=args.lr)
+    if args.optim == "adam":
+        optimizer = Adam(model.state_dict(), lr=args.lr)
+    elif args.optim == "sgd":
+        optimizer = SGD(model.state_dict(), lr=args.lr)
+    else:
+        NotImplementedError()
 
     # train
     H, W = 28, 28

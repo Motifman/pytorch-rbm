@@ -29,3 +29,14 @@ class Adam:
                 {key: self.lr * m_1_hat / (torch.sqrt(m_2_hat) + self.eps)}
             )
         return grad_dict
+
+
+class SGD:
+    def __init__(self, parameters, lr=1e-3):
+        self.lr = lr
+
+    def calc_grad(self, grad):
+        grad_dict = {}
+        for key, value in grad.items():
+            grad_dict.update({key: self.lr * value})
+        return grad_dict
