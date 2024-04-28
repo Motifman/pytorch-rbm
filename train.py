@@ -86,9 +86,9 @@ if __name__ == "__main__":
         device=device,
     )
     if args.optim == "adam":
-        optimizer = Adam(model.state_dict(), lr=args.lr)
+        optimizer = Adam(model.param, lr=args.lr)
     elif args.optim == "sgd":
-        optimizer = SGD(model.state_dict(), lr=args.lr)
+        optimizer = SGD(model.param, lr=args.lr)
     else:
         NotImplementedError()
 
@@ -124,6 +124,7 @@ if __name__ == "__main__":
             inputs = inputs.to(device)
             # grad = model.grad(inputs, sample_type="pcd_cont")
             # grad = optimizer.calc_grad(grad)
+            # model.update(grad)
             model.update(inputs, args.lr, args.sampling_method)
             outputs, prob = model.sample_by_v(inputs, num_gib=args.num_gib)
             sum_train_reconst += reconst_loss(prob, inputs).item()
