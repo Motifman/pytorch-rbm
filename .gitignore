@@ -161,3 +161,5 @@ cython_debug/
 data/
 log/
 fig/
+fig_cl
+log_cl
