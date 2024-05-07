@@ -269,7 +269,7 @@ if __name__ == "__main__":
         inputs, labels.float(), num_gib=args.num_gib
     )
     inputs = inputs.reshape(-1, 1, H, W).repeat(1, 3, 1, 1)
-    outputs = outputs_label.reshape(-1, 1, H, W).repeat(1, 3, 1, 1)
+    outputs = outputs_data.reshape(-1, 1, H, W).repeat(1, 3, 1, 1)
     diff = ((inputs - outputs) + 1) / 2
     images = torch.cat([inputs[:10], outputs[:10], diff[:10]], dim=0)
     grid = make_grid(images, nrow=10).cpu()
