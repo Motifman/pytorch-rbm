@@ -40,7 +40,7 @@ F_{\theta}(x) &= -(b^{\mathrm{V}})^{\mathrm{T}}x - \sum^M_{i=1} \log(1 + \exp(b_
 ```
 python3 train_classification.py
 ```
-生成的アプローチは画像ベクトル$\mathbf{v}$とラベル$\mathbf{t}$の同時分布$p(\mathbf{v},\mathbf{t})$をモデル化して尤度最大化を行います。クラス分類の際はある画像に対してクラスラベル$\mathbf{t}_1,...,\mathbf{t}_K$を用意し、それぞれでエネルギー$E(\mathbf{v},\mathbf{t}_1),...,E(\mathbf{v},\mathbf{t}_K)$を計算し、エネルギーが最小のクラスに画像を分類します。
+生成的アプローチは画像ベクトル $\mathbf{v}$ とラベル $\mathbf{t}$ の同時分布 $p(\mathbf{v},\mathbf{t})$ をモデル化して尤度最大化を行います。クラス分類の際はある画像に対してクラスラベル $\mathbf{t}_1,...,\mathbf{t}_K$ を用意し、それぞれでエネルギー $E(\mathbf{v},\mathbf{t}_1),...,E(\mathbf{v},\mathbf{t}_K)$ を計算し、エネルギーが最小のクラスに画像を分類します。
 
 
 ## TODO
