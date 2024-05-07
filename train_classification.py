@@ -26,14 +26,13 @@ def reconst_loss(probs, targets):
 
 def categorical_cross_entropy(probs, labels):
     loss = (labels * torch.log(probs + 1e-10)).sum(-1)
-    print("loss.shape = ", loss.shape)
     return loss.mean()
 
 
 def accuracy(preds, labels):
     labels = torch.argmax(labels, dim=-1)
     acc = (preds == labels).sum()
-    acc /= labels.shape[0]
+    acc = acc / labels.shape[0]
     return acc
 
 
@@ -136,6 +135,8 @@ if __name__ == "__main__":
         "reconst_test": [],
         "pl_train": [],
         "pl_test": [],
+        "ce_train": [],
+        "ce_test": [],
     }
 
     for epoch in tqdm(range(args.num_epoch)):
@@ -148,34 +149,44 @@ if __name__ == "__main__":
         sum_train_pl = 0
         sum_test_pl = 0
         for inputs, labels in train_loader:
-            inputs, labels = inputs.to(device), F.one_hot(labels).to(device)
-            grad = model.grad(inputs, labels, sample_type="pcd_cont")
+            inputs, labels = (
+                inputs.to(device),
+                F.one_hot(labels, num_classes=label_size).to(device),
+            )
+            grad = model.grad(inputs, labels.float(), sample_type="pcd_cont")
             grad = optimizer.calc_grad(grad)
             model.update(grad)
             outputs_data, outputs_label, probs_data, probs_label = model.sample_by_v(
-                inputs, labels, num_gib=args.num_gib
+                inputs, labels.float(), num_gib=args.num_gib
             )
             preds = model.classification(inputs)
             sum_train_acc += accuracy(preds, labels).item()
             sum_train_reconst += reconst_loss(probs_data, inputs).item()
             sum_train_ce += categorical_cross_entropy(probs_label, labels).item()
-            sum_train_pl += -model.pseudo_likelihood(inputs, labels).mean().item()
+            sum_train_pl += (
+                -model.pseudo_likelihood(inputs, labels.float()).mean().item()
+            )
 
         with torch.no_grad():
             for inputs, labels in test_loader:
-                inputs, labels = inputs.to(device), F.one_hot(labels).to(device)
+                inputs, labels = (
+                    inputs.to(device),
+                    F.one_hot(labels, num_classes=label_size).to(device),
+                )
                 outputs_data, outputs_label, probs_data, probs_label = (
-                    model.sample_by_v(inputs, labels, num_gib=args.num_gib)
+                    model.sample_by_v(inputs, labels.float(), num_gib=args.num_gib)
                 )
                 preds = model.classification(inputs)
                 sum_test_acc += accuracy(preds, labels).item()
                 sum_test_reconst += reconst_loss(probs_data, inputs).item()
                 sum_test_ce += categorical_cross_entropy(probs_label, labels).item()
-                sum_test_pl += -model.pseudo_likelihood(inputs, labels).mean().item()
+                sum_test_pl += (
+                    -model.pseudo_likelihood(inputs, labels.float()).mean().item()
+                )
 
         # reconstruction
         outputs_data, outputs_label, probs_data, probs_label = model.sample_by_v(
-            inputs_train_const, labels_train_const, num_gib=args.num_gib
+            inputs_train_const, labels_train_const.float(), num_gib=args.num_gib
         )
         inputs_data = inputs_train_const.reshape(-1, 1, H, W).repeat(1, 3, 1, 1)
         outputs_data = outputs_data.reshape(-1, 1, H, W).repeat(1, 3, 1, 1)
@@ -186,10 +197,14 @@ if __name__ == "__main__":
 
         # calculate mean free-energy
         free_energy_train = (
-            model.free_energy(inputs_train_const, labels_train_const).mean().item()
+            model.free_energy(inputs_train_const, labels_train_const.float())
+            .mean()
+            .item()
         )
         free_energy_test = (
-            model.free_energy(inputs_test_const, labels_test_const).mean().item()
+            model.free_energy(inputs_test_const, labels_test_const.float())
+            .mean()
+            .item()
         )
         free_energy_diff = free_energy_train - free_energy_test
         writer.add_scalar("free_energy_train", free_energy_train, epoch)
@@ -238,14 +253,20 @@ if __name__ == "__main__":
     # evaluate RBM
     try:
         inputs, labels = next(train_loader_iter)
-        inputs, labels = inputs.to(device), F.one_hot(labels).to(device)
+        inputs, labels = (
+            inputs.to(device),
+            F.one_hot(labels, num_classes=label_size).to(device),
+        )
     except StopIteration:
         train_loader_iter = iter(train_loader)
         inputs, labels = next(train_loader_iter)
-        inputs, labels = inputs.to(device), F.one_hot(labels).to(device)
+        inputs, labels = (
+            inputs.to(device),
+            F.one_hot(labels, num_classes=label_size).to(device),
+        )
 
     outputs_data, outputs_label, probs_data, probs_label = model.sample_by_v(
-        inputs, labels, num_gib=args.num_gib
+        inputs, labels.float(), num_gib=args.num_gib
     )
     inputs = inputs.reshape(-1, 1, H, W).repeat(1, 3, 1, 1)
     outputs = outputs_label.reshape(-1, 1, H, W).repeat(1, 3, 1, 1)
@@ -300,12 +321,18 @@ if __name__ == "__main__":
     sum_train_acc = 0
     sum_test_acc = 0
     for inputs, labels in train_loader:
-        inputs, labels = inputs.to(device), F.one_hot(labels).to(device)
+        inputs, labels = (
+            inputs.to(device),
+            F.one_hot(labels, num_classes=label_size).to(device),
+        )
         preds = model.classification(inputs)
         sum_train_acc += accuracy(inputs, labels).item()
 
     for inputs, labels in test_loader:
-        inputs, labels = inputs.to(device), F.one_hot(labels).to(device)
+        inputs, labels = (
+            inputs.to(device),
+            F.one_hot(labels, num_classes=label_size).to(device),
+        )
         preds = model.classification(inputs)
         sum_test_acc += accuracy(inputs, labels).item()
     train_acc = sum_train_acc / len(train_loader)

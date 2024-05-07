@@ -204,7 +204,10 @@ class RBMClassification(nn.Module):
         h_neg = self.h_state
         for _ in range(self.k_cd):
             v_data_neg = self._pv_data_given_h(h_neg).bernoulli()
-            v_class_neg = Categorical(self._pv_class_given_h(h_neg)).sample()
+            v_class_neg = F.one_hot(
+                Categorical(self._pv_class_given_h(h_neg)).sample(),
+                num_classes=self.label_size,
+            ).float()
             h_neg = self._ph_given_v(v_data_neg, v_class_neg).bernoulli()
         self.h_state = h_neg
 
@@ -218,7 +221,10 @@ class RBMClassification(nn.Module):
         h_neg = h_pos
         for _ in range(self.k_cd):
             v_data_neg = self._pv_data_given_h(h_neg).bernoulli()
-            v_class_neg = Categorical(self._pv_class_given_h(h_neg)).sample()
+            v_class_neg = F.one_hot(
+                Categorical(self._pv_class_given_h(h_neg)).sample(),
+                num_classes=self.label_size,
+            ).float()
             h_neg = self._ph_given_v(v_data_neg, v_class_neg).bernoulli()
 
         return h_pos, v_data_neg, v_class_neg, h_neg
@@ -232,7 +238,10 @@ class RBMClassification(nn.Module):
         h_neg = self.h_state
         for _ in range(self.k_cd):
             v_data_neg = self._pv_data_given_h(h_neg).bernoulli()
-            v_class_neg = Categorical(self._pv_class_given_h(h_neg)).sample()
+            v_class_neg = F.one_hot(
+                Categorical(self._pv_class_given_h(h_neg)).sample(),
+                num_classes=self.label_size,
+            ).float()
             ph_neg = self._ph_given_v(v_data_neg, v_class_neg)
             h_neg = ph_neg.bernoulli()
         self.h_state = h_neg
@@ -280,10 +289,9 @@ class RBMClassification(nn.Module):
         """
         term1 = -torch.matmul(v, self.param["bias_v1"].squeeze(0))
         term2 = -torch.matmul(label, self.param["bias_v2"].squeeze(0))
-        bias = (
-            self.param["bias_h"]
-            + torch.matmul(v, self.param["weight1"].t())
-            + torch.matmul(label, self.param["weight2"].t())
+        bias = self.param["bias_h"] + torch.matmul(
+            torch.cat([v, label], dim=-1),
+            torch.cat([self.param["weight1"], self.param["weight2"]], dim=-1).t(),
         )
         term2 = -torch.log(1 + torch.exp(bias) + 1e-10).sum(dim=1)
         return term1 + term2
@@ -308,9 +316,11 @@ class RBMClassification(nn.Module):
         """
         flip = torch.randint(0, v.size(1) + label.size(1), (1,))
         v_fliped = v.clone()
-        v_fliped[:, flip] = 1 - v_fliped[:, flip]
-        label_fliped = v.clone()
-        label_fliped[:, flip] = 1 - label_fliped[:, flip]
+        label_fliped = label.clone()
+        if flip < v.size(1):
+            v_fliped[:, flip] = 1 - v_fliped[:, flip]
+        else:
+            label_fliped[:, flip - v.size(1)] = 1 - label_fliped[:, flip - v.size(1)]
         energy = self._energy(v, label)
         energy_fliped = self._energy(v_fliped, label_fliped)
         return (v.size(1) + label.size(1)) * F.softplus(energy_fliped - energy)
@@ -324,7 +334,9 @@ class RBMClassification(nn.Module):
             pv_data_gibb = self._pv_data_given_h(h)
             pv_class_gibb = self._pv_class_given_h(h)
             v_data_gibb = pv_data_gibb.bernoulli()
-            v_class_gibb = Categorical(pv_class_gibb).sample()
+            v_class_gibb = F.one_hot(
+                Categorical(pv_class_gibb).sample(), num_classes=self.label_size
+            ).float()
             h = self._ph_given_v(v_data_gibb, v_class_gibb).bernoulli()
         return v_data_gibb, v_class_gibb, pv_data_gibb, pv_class_gibb
 
@@ -332,11 +344,13 @@ class RBMClassification(nn.Module):
         """
         自由エネルギーによるクラス分類
         """
+        B = v.shape[0]
         fe_list = []
         for i in range(self.label_size):
-            labels = torch.zeros([self.batch_size, self.label_size], device=self.device)
+            labels = torch.zeros([B, self.label_size], device=self.device)
             labels[:, i] = 1  # one-hotベクトルを作成
             fe_list.append(self.free_energy(v, labels))
         fe_tensor = torch.stack(fe_list, dim=-1)  # (B, label_size)
         pred_label = torch.argmax(fe_tensor, dim=-1)  # (B)
+
         return pred_label
